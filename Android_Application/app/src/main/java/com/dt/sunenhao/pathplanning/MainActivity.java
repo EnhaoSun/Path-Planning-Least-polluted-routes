@@ -1,12 +1,18 @@
 package com.dt.sunenhao.pathplanning;
 
+import android.content.Context;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,25 +22,25 @@ import java.util.Scanner;
 
 import android.os.StrictMode;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 // classes needed to initialize map
 import com.dt.sunenhao.pathplanning.Object.DataIO;
-import com.dt.sunenhao.pathplanning.Object.MyPoint;
+import com.dt.sunenhao.pathplanning.Object.Route;
 import com.mapbox.api.directions.v5.DirectionsCriteria;
 import com.mapbox.api.directions.v5.models.DirectionsRoute;
 import com.mapbox.api.directions.v5.models.LegStep;
 import com.mapbox.api.directions.v5.models.RouteLeg;
+import com.mapbox.api.directions.v5.models.RouteOptions;
 import com.mapbox.api.matching.v5.MapboxMapMatching;
 import com.mapbox.api.matching.v5.models.MapMatchingResponse;
 import com.mapbox.core.exceptions.ServicesException;
-import com.mapbox.geojson.FeatureCollection;
-import com.mapbox.geojson.LineString;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.location.modes.RenderMode;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
@@ -51,10 +57,7 @@ import com.mapbox.mapboxsdk.location.modes.CameraMode;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.geometry.LatLng;
-import com.mapbox.mapboxsdk.style.expressions.Expression;
 import com.mapbox.mapboxsdk.style.layers.HeatmapLayer;
-import com.mapbox.mapboxsdk.style.layers.Layer;
-import com.mapbox.mapboxsdk.style.layers.LineLayer;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
@@ -80,6 +83,7 @@ import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage;
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher;
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions;
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
+import com.mapbox.services.android.navigation.v5.navigation.DirectionsRouteType;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
 import com.mapbox.api.directions.v5.models.DirectionsResponse;
 import retrofit2.Call;
@@ -101,15 +105,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // variables for calculating and drawing a route
     private NavigationMapRoute navigationMapRoute;
-    private DirectionsRoute currentRoute;
+    private ArrayList<DirectionsRoute> currentRoute;
 
     private Button startNav;
     private Button planRoute;
     private Button showHeatMap;
 
+    private TextView pollution;
+    private TextView usePollution_textView;
+
     private static final String AIRPOLLUTION_SOURCE_ID = "airpollution";
     private static final String HEATMAP_LAYER_ID = "airpollution-heat";
-    private static final String HEATMAP_LAYER_SOURCE = "airpollution";
+    //private static final String HEATMAP_LAYER_SOURCE = "airpollution";
+
+    private static String heatMapJson = "";
+    private static boolean usePollution = true;
+
+    private Point originPoint = null;
+    private Point destinationPoint = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,36 +143,58 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         System.out.println("initiating button 1");
         startNav = (Button) findViewById(R.id.startButton);
         startNav.setOnClickListener((View v) ->
-                launchNavigationWithRoute()
+                //launchNavigationWithRoute()
+                setUsePollution()
         );
+        //startNav.setVisibility(View.INVISIBLE);
+        startNav.setEnabled(true);
+        startNav.setBackgroundResource(R.color.mapbox_blue);
 
+        pollution = findViewById(R.id.pollution);
+        pollution.setText("PM2 Level");
+
+        usePollution_textView = findViewById(R.id.usePollution);
+        usePollution_textView.setText("Use pollution: " + usePollution);
 
         System.out.println("initiating button 2");
         planRoute = findViewById(R.id.planRoute);
         planRoute.setOnClickListener((View v) ->
-                planRoutes()
+                {
+                try {
+                    planRoutes();
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+        }
         );
 
         System.out.println("initiating button 3");
         showHeatMap = findViewById(R.id.showHeatMap);
+        //showHeatMap.setVisibility(View.INVISIBLE);
+
+        currentRoute = new ArrayList<>();
 
     }
 
-    private void planRoutes(){
-        double sLat = 55.940639;
-        double sLong = -3.182709;
-
-        double tLat = 55.944941;
-        double tLong = -3.194339;
-        RoutePlanner.findRoute(sLat, sLong, tLat, tLong);
-        requestMapMatched(RoutePlanner.getRoutePoints());
+    private void setUsePollution(){
+        usePollution = !usePollution;
+        usePollution_textView.setText("Use pollution: " + usePollution);
     }
+    private void planRoutes() throws Exception{
+        if(originPoint == null || destinationPoint == null)
+            return;
 
-    private void launchNavigationWithRoute(){
-        System.out.println(currentRoute);
-        NavigationLauncherOptions options = NavigationLauncherOptions.builder()
-                .directionsRoute(currentRoute).build();
-        NavigationLauncher.startNavigation(MainActivity.this, options);
+        System.out.println("Start plan the route");
+        double sLat = originPoint.latitude();
+        double sLong = originPoint.longitude();
+        double tLat = destinationPoint.latitude();
+        double tLong = destinationPoint.longitude();
+
+        System.out.println("/" + sLat + "/" + sLong + "/" + tLat + "/" + tLong);
+        Route route = DataIO.getRoutes(originPoint, destinationPoint, usePollution, sLat, sLong, tLat, tLong);
+        System.out.println(route.getTotalPollution());
+        pollution.setText("PM2 Level " + route.getTotalPollution());
+        requestMapMatched(route.getRoute());
     }
 
     @Override
@@ -171,12 +206,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     public void onStyleLoaded(@NonNull Style style) {
                         System.out.println("onStyleLoad");
                         enableLocationComponent(style);
-                        //addDestinationIconSymbolLayer(style);
-                        //mapboxMap.addOnMapClickListener(MainActivity.this);
-                        //new LoadGeoJson(MainActivity.this).execute();
-
-                        //for (Layer singleLayer : mapboxMap.getStyle().getLayers())
-                        //    System.out.println("onMapReady: layer id = " + singleLayer.getId());
+                        MainActivity.this.planRoute.setEnabled(true);
+                        MainActivity.this.planRoute.setBackgroundResource(R.color.mapbox_blue);
+                        addDestinationIconSymbolLayer(style);
+                        mapboxMap.addOnMapClickListener(MainActivity.this);
 
                         new loadMapData(MainActivity.this).execute();
                         showHeatMap.setOnClickListener((View v) ->
@@ -186,27 +219,80 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 });
     }
-
     private void setShowHeatMap(@NonNull Style style){
         if(style.getSource(AIRPOLLUTION_SOURCE_ID) == null){
             System.out.println("addAirpollutionSource");
             try {
-                List<MyPoint> totalAirPollutionPoints = DataIO.readAirpollution();
-                totalAirPollutionPoints.addAll(RoutePlanner.getPoints());
-                style.addSource(new GeoJsonSource(AIRPOLLUTION_SOURCE_ID, DataIO.toJson(totalAirPollutionPoints)));
+                if(heatMapJson != null) {
+                    System.out.println("Add HeatMap");
+                    style.addSource(new GeoJsonSource(AIRPOLLUTION_SOURCE_ID, heatMapJson));
+                }
             }catch (Exception e){
                 e.printStackTrace();
             }
         }
         if(style.getLayer(HEATMAP_LAYER_ID) == null) {
             System.out.println("addHeatmapLayer");
-            addHeatmapLayer(style);
+            if(style.getSource(AIRPOLLUTION_SOURCE_ID) != null)
+                addHeatmapLayer(style);
         }else{
             System.out.println("removeHeatmapLayer");
             style.removeLayer(HEATMAP_LAYER_ID);
         }
     }
+    private void addHeatmapLayer(@NonNull Style loadedMapStyle) {
+        HeatmapLayer layer = new HeatmapLayer(HEATMAP_LAYER_ID, AIRPOLLUTION_SOURCE_ID);
+        layer.setMaxZoom(18);
+        layer.setProperties(
+                // Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
+                // Begin color ramp at 0-stop with a 0-transparency color
+                // to create a blur-like effect.
+                heatmapColor(
+                        interpolate(
+                                linear(), heatmapDensity(),
+                                literal(0), rgba(33, 102, 172, 0),
+                                literal(0.2), rgb(103, 169, 207),
+                                literal(0.4), rgb(209, 229, 240),
+                                literal(0.6), rgb(253, 219, 199),
+                                literal(0.8), rgb(239, 138, 98),
+                                literal(1), rgb(178, 24, 43)
+                        )
+                ),
+                // Increase the heatmap weight based on frequency and property magnitude
+                heatmapWeight(
+                        interpolate(
+                                linear(), get("airpollution"),
+                                stop(0, 0),
+                                stop(250, 1)
+                        )
+                ),
 
+                // Increase the heatmap color weight weight by zoom level
+                // heatmap-intensity is a multiplier on top of heatmap-weight
+                heatmapIntensity(
+                        interpolate(
+                                linear(), zoom(),
+                                stop(0, 1),
+                                stop(20, 5)
+                        )
+                ),
+
+                // Adjust the heatmap radius by zoom level
+                heatmapRadius(
+                        interpolate(
+                                linear(), zoom(),
+                                stop(0, 2),
+                                stop(20, 20)
+                        )
+                ),
+
+                // Transition from heatmap to circle layer by zoom level
+                heatmapOpacity(1f
+                )
+        );
+
+        loadedMapStyle.addLayerBelow(layer, "waterway-label");
+    }
     private void addDestinationIconSymbolLayer(@NonNull Style loadedMapStyle) {
         loadedMapStyle.addImage("destination-icon-id",
                 BitmapFactory.decodeResource(this.getResources(), R.drawable.mapbox_marker_icon_default));
@@ -224,55 +310,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public boolean onMapClick(@NonNull LatLng point) {
 
-        Point destinationPoint = Point.fromLngLat(point.getLongitude(), point.getLatitude());
-        Point originPoint = Point.fromLngLat(locationComponent.getLastKnownLocation().getLongitude(),
-                locationComponent.getLastKnownLocation().getLatitude());
+        destinationPoint = Point.fromLngLat(point.getLongitude(), point.getLatitude());
+        originPoint = Point.fromLngLat(-3.189228,55.942515);
+        //originPoint = Point.fromLngLat(locationComponent.getLastKnownLocation().getLongitude(),
+        //        locationComponent.getLastKnownLocation().getLatitude());
 
         GeoJsonSource source = mapboxMap.getStyle().getSourceAs("destination-source-id");
         if (source != null) {
             source.setGeoJson(Feature.fromGeometry(destinationPoint));
         }
-        getRoute(originPoint, destinationPoint);
-        startNav.setEnabled(true);
-        startNav.setBackgroundResource(R.color.mapbox_blue);
-        return true;
-    }
-    private void getRoute(Point origin, Point destination) {
-        ///*
-        NavigationRoute.builder(this)
-                .accessToken(Mapbox.getAccessToken())
-                .origin(origin)
-                .destination(destination)
-                .language(new Locale("en"))
-                .build()
-                .getRoute(new Callback<DirectionsResponse>() {
-                    @Override
-                    public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
-                        Timber.d("Response code: " + response.code());
-                        if (response.body() == null) {
-                            Timber.e("No routes found, make sure you set the right user and access token.");
-                            return;
-                        } else if (response.body().routes().size() < 1) {
-                            Timber.e("No routes found");
-                            return;
-                        }
-                        currentRoute = response.body().routes().get(0);
-                        System.out.println("Navg: " + currentRoute.toString());
-                        // Draw the route on the map
-                        if (navigationMapRoute != null) {
-                            navigationMapRoute.removeRoute();
-                        } else {
-                            navigationMapRoute = new NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute);
-                        }
-                        navigationMapRoute.addRoute(currentRoute);
-                    }
 
-                    @Override
-                    public void onFailure(Call<DirectionsResponse> call, Throwable throwable) {
-                        Timber.e("Error: " + throwable.getMessage());
-                    }
-                });
-        //*/
+        //getRoute(originPoint, destinationPoint);
+        //startNav.setEnabled(true);
+        //startNav.setBackgroundResource(R.color.mapbox_blue);
+        return true;
     }
     @SuppressWarnings( {"MissingPermission"})
     private void enableLocationComponent(@NonNull Style loadedMapStyle) {
@@ -349,117 +400,47 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView.onLowMemory();
     }
 
-
-    private static class LoadGeoJson extends AsyncTask<Void, Void, FeatureCollection> {
-
-        private WeakReference<MainActivity> weakReference;
-
-        LoadGeoJson(MainActivity activity) {
-            this.weakReference = new WeakReference<>(activity);
-        }
-
-        @Override
-        protected FeatureCollection doInBackground(Void... voids) {
-            try {
-                MainActivity activity = weakReference.get();
-                if (activity != null) {
-                    InputStream inputStream = activity.getAssets().open("test-area-lines.geojson");
-                    return FeatureCollection.fromJson(convertStreamToString(inputStream));
+    private void cacheHeatMap(Context context){
+        File file;
+        String content = "";
+        try{
+            file = new File(context.getCacheDir(), "/cacheHeatMap");
+            /*
+            while(context.getCacheDir().listFiles().length > 0){
+                if(context.getCacheDir().listFiles()[0].exists()){
+                    System.out.println("Deleting");
+                    context.getCacheDir().listFiles()[0].delete();
                 }
-            } catch (Exception exception) {
-                Timber.e("Exception Loading GeoJSON: %s" , exception.toString());
             }
-            return null;
-        }
+            */
 
-        static String convertStreamToString(InputStream is) {
-            Scanner scanner = new Scanner(is).useDelimiter("\\A");
-            return scanner.hasNext() ? scanner.next() : "";
-        }
-
-        @Override
-        protected void onPostExecute(@Nullable FeatureCollection featureCollection) {
-            super.onPostExecute(featureCollection);
-            MainActivity activity = weakReference.get();
-            if (activity != null && featureCollection != null) {
-                activity.drawLines(featureCollection);
+            if(!file.exists()) {
+                System.out.println("Creating cache file");
+                System.out.println("Read Heatmap from cloud");
+                try {
+                    content = DataIO.getHeatMap();
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+                System.out.println(file.getAbsolutePath());
+                FileOutputStream outputStream = new FileOutputStream(file, false);
+                outputStream.write(content.getBytes());
+                outputStream.close();
+                System.out.println("Finished caching file");
+                heatMapJson = content;
+            }else{
+                System.out.println("Ready to read from cache");
+                FileInputStream inputStream = new FileInputStream(file);
+                InputStreamReader isr = new InputStreamReader(inputStream);
+                BufferedReader bufferedReader = new BufferedReader(isr);
+                while((content = bufferedReader.readLine())!=null){
+                    heatMapJson += content;
+                }
             }
+        }catch (IOException e){
+            e.printStackTrace();
+            System.out.println("Cache file error: " + e.toString());
         }
-    }
-
-    private void drawLines(@NonNull FeatureCollection featureCollection) {
-        List<Feature> features = featureCollection.features();
-        if (features != null && features.size() > 0) {
-            Feature feature = features.get(0);
-            requestMapMatched1(feature);
-        }
-    }
-    private void requestMapMatched1(Feature feature) {
-        List<Point> points = ((LineString) Objects.requireNonNull(feature.geometry())).coordinates();
-
-        try {
-            // Setup the request using a client.
-            MapboxMapMatching.builder()
-                    .accessToken(Objects.requireNonNull(Mapbox.getAccessToken()))
-                    .profile(DirectionsCriteria.PROFILE_WALKING)
-                    .voiceInstructions(true)
-                    .bannerInstructions(true)
-                    .coordinates(points)
-                    .steps(true)
-                    .build()
-                    .enqueueCall(new Callback<MapMatchingResponse>() {
-                        @Override
-                        public void onResponse(@NonNull Call<MapMatchingResponse> call,
-                                               @NonNull Response<MapMatchingResponse> response) {
-                            System.out.println("In mapbox Respond");
-                            if (response.isSuccessful()) {
-                                System.out.println("Signing currentRoute");
-                                currentRoute = response.body().matchings().get(0).toDirectionRoute();
-                                System.out.println(currentRoute.legs().get(0).steps().get(0));
-                            } else {
-                                // If the response code does not response "OK" an error has occurred.
-                                Timber.e("MapboxMapMatching failed with %s", response.code());
-                                System.out.println("MapboxMapMatching failed");
-                                return;
-                            }
-
-                            // Draw the route on the map
-                            if (navigationMapRoute != null) {
-                                navigationMapRoute.removeRoute();
-                            } else {
-                                navigationMapRoute = new NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute);
-                            }
-
-                            List<LegStep> totalLegStep = new ArrayList<>();
-                            for(RouteLeg leg: currentRoute.legs()){
-                                for(LegStep legStep : leg.steps()){
-                                    totalLegStep.add(legStep);
-                                }
-                            }
-                            RouteLeg leg1 = RouteLeg.builder()
-                                    .distance(currentRoute.distance())
-                                    .duration(currentRoute.duration())
-                                    .steps(totalLegStep)
-                                    .build();
-
-                            currentRoute.legs().clear();
-                            currentRoute.legs().add(leg1);
-
-                            navigationMapRoute.addRoute(currentRoute);
-                        }
-
-                        @Override
-                        public void onFailure(Call<MapMatchingResponse> call, Throwable throwable) {
-                            Timber.e(throwable, "MapboxMapMatching error");
-                        }
-                    });
-        } catch (ServicesException servicesException) {
-            Timber.e(servicesException, "MapboxMapMatching error");
-            System.out.println("MapboxMapMatching error");
-        }
-        startNav.setEnabled(true);
-        startNav.setBackgroundResource(R.color.mapbox_blue);
-
     }
 
     private static class loadMapData extends AsyncTask<Void, Boolean, Void>{
@@ -475,15 +456,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 MainActivity activity = weakReference.get();
                 if (activity != null) {
-                    System.out.println("Start do in background");
-                    System.out.println("Load airpollution");
-                    RoutePlanner.setAirpollution(DataIO.readAirpollution());
-                    System.out.println("Load map data");
-                    RoutePlanner.initialiseGrouph(activity.getAssets(), true);
-                    RoutePlanner.setAirPollutionReady(true);
-                    publishProgress(true);
-                    RoutePlanner.setPlannerReady(true);
-                    System.out.println("planner Ready: " + RoutePlanner.isPlannerReady());
+                    activity.cacheHeatMap(activity.getApplicationContext());
+                    System.out.println("Downloaded Heatmap");
                 }
             }catch (Exception e){
                 System.out.println(e.toString());
@@ -494,141 +468,96 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         @Override
-        protected void onProgressUpdate(Boolean... values) {
-            MainActivity activity = weakReference.get();
-            if(values.length > 0){
-                if(values[0]){
-                    if(RoutePlanner.isAirPollutionReady()){
-                        System.out.println("Enable the HeatMap button");
-                        activity.showHeatMap.setEnabled(true);
-                        activity.showHeatMap.setBackgroundResource(R.color.mapbox_blue);
-                    }
-                }
-            }
-        }
-
-        @Override
         protected void onPostExecute(Void aVoid) {
             MainActivity activity = weakReference.get();
             try {
-
-                if (RoutePlanner.isPlannerReady()) {
-                    System.out.println("Enable the planner button");
-                    activity.planRoute.setEnabled(true);
-                    activity.planRoute.setBackgroundResource(R.color.mapbox_blue);
-                }
+                activity.showHeatMap.setEnabled(true);
+                activity.showHeatMap.setBackgroundResource(R.color.mapbox_blue);
+                System.out.println("Enabled the heatmap button");
             }catch (Exception e){
                 System.out.println("Failed to enable route planner button");
             }
         }
     }
 
-    private void addHeatmapLayer(@NonNull Style loadedMapStyle) {
-        HeatmapLayer layer = new HeatmapLayer(HEATMAP_LAYER_ID, AIRPOLLUTION_SOURCE_ID);
-        layer.setMaxZoom(18);
-        layer.setProperties(
-                // Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
-                // Begin color ramp at 0-stop with a 0-transparency color
-                // to create a blur-like effect.
-                heatmapColor(
-                        interpolate(
-                                linear(), heatmapDensity(),
-                                literal(0), rgba(33, 102, 172, 0),
-                                literal(0.2), rgb(103, 169, 207),
-                                literal(0.4), rgb(209, 229, 240),
-                                literal(0.6), rgb(253, 219, 199),
-                                literal(0.8), rgb(239, 138, 98),
-                                literal(1), rgb(178, 24, 43)
-                        )
-                ),
-                // Increase the heatmap weight based on frequency and property magnitude
-                heatmapWeight(
-                        interpolate(
-                                linear(), get("airpollution"),
-                                stop(0, 0),
-                                stop(RoutePlanner.getMaxPollution(), 1)
-                        )
-                ),
-
-                // Increase the heatmap color weight weight by zoom level
-                // heatmap-intensity is a multiplier on top of heatmap-weight
-                heatmapIntensity(
-                        interpolate(
-                                linear(), zoom(),
-                                stop(0, 1),
-                                stop(20, 5)
-                        )
-                ),
-
-                // Adjust the heatmap radius by zoom level
-                heatmapRadius(
-                        interpolate(
-                                linear(), zoom(),
-                                stop(0, 2),
-                                stop(20, 20)
-                        )
-                ),
-
-                // Transition from heatmap to circle layer by zoom level
-                heatmapOpacity(1f
-                )
-        );
-
-        loadedMapStyle.addLayerBelow(layer, "waterway-label");
-    }
 
     private void requestMapMatched(ArrayList<Point> points) {
         System.out.println("Number of points: " + points.size());
         ///*
+        for(int i = 0; i < points.size(); i++) {
+         //   double lat = points.get(i).latitude();
+         //   double longt = points.get(i).longitude();
+        //    mapboxMap.addMarker(new MarkerOptions().position(new LatLng(lat, longt)));
+            System.out.println(points.get(i).coordinates());
+        }
+        //*/
+        //    System.out.println(points.get(i).coordinates());
+
+
+        if (points.size() < 3)
+            return;
         try {
             // Setup the request using a client.
             MapboxMapMatching.builder()
                     .accessToken(Objects.requireNonNull(Mapbox.getAccessToken()))
-                    .profile(DirectionsCriteria.PROFILE_WALKING)
-                    .voiceInstructions(true)
-                    .bannerInstructions(true)
                     .coordinates(points)
                     .steps(true)
+                    .voiceInstructions(true)
+                    .bannerInstructions(true)
+                    .profile(DirectionsCriteria.PROFILE_WALKING)
                     .build()
                     .enqueueCall(new Callback<MapMatchingResponse>() {
                         @Override
                         public void onResponse(@NonNull Call<MapMatchingResponse> call,
                                                @NonNull Response<MapMatchingResponse> response) {
-                            System.out.println("In mapbox Respond");
+                            //System.out.println("In mapbox Respond");
                             if (response.isSuccessful()) {
                                 System.out.println("Signing currentRoute");
-                                currentRoute = response.body().matchings().get(0).toDirectionRoute();
-                                System.out.println(currentRoute.legs().get(0).steps().get(0));
+                                currentRoute.clear();
+                                for(int i = 0; i < response.body().matchings().size(); i++)
+                                    currentRoute.add(response.body().matchings().get(i).toDirectionRoute());
+                                System.out.println("Number of routes: " + response.body().matchings().size());
                             } else {
                                 // If the response code does not response "OK" an error has occurred.
                                 Timber.e("MapboxMapMatching failed with %s", response.code());
                                 System.out.println("MapboxMapMatching failed");
                                 return;
                             }
-
                             List<LegStep> totalLegStep = new ArrayList<>();
-                            for(RouteLeg leg: currentRoute.legs()){
-                                for(LegStep legStep : leg.steps()){
-                                    totalLegStep.add(legStep);
-                                }
-                            }
-                            RouteLeg leg1 = RouteLeg.builder()
-                                    .distance(currentRoute.distance())
-                                    .duration(currentRoute.duration())
-                                    .steps(totalLegStep)
-                                    .build();
+                            int routeLegs = 0;
+                            for(int i = 0; i < currentRoute.size(); i++)
+                                routeLegs += currentRoute.get(i).legs().size();
 
-                            currentRoute.legs().clear();
-                            currentRoute.legs().add(leg1);
+                            System.out.println("Current Route Legs: " + routeLegs);
+
+
+                            for(int i = 0; i< currentRoute.size(); i++) {
+
+                                for (RouteLeg leg : currentRoute.get(i).legs()) {
+                                    for (LegStep legStep : leg.steps()) {
+                                        totalLegStep.add(legStep);
+                                    }
+                                }
+                                RouteLeg leg1 = RouteLeg.builder()
+                                        .distance(currentRoute.get(i).distance())
+                                        .duration(currentRoute.get(i).duration())
+                                        .steps(totalLegStep)
+                                        .build();
+
+                                currentRoute.get(i).legs().clear();
+                                currentRoute.get(i).legs().add(leg1);
+                            }
 
 
                             // Draw the route on the map
                             if (navigationMapRoute != null) {
-                                navigationMapRoute.removeRoute();
+                                //navigationMapRoute.removeRoute();
+                                navigationMapRoute.updateRouteArrowVisibilityTo(false);
+                                navigationMapRoute.updateRouteVisibilityTo(false);
                             } else {
                                 navigationMapRoute = new NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute, "natural-line-label");
                             }
-                            navigationMapRoute.addRoute(currentRoute);
+                            navigationMapRoute.addRoutes(currentRoute);
                         }
 
                         @Override
@@ -640,7 +569,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Timber.e(servicesException, "MapboxMapMatching error");
             System.out.println("MapboxMapMatching error");
         }
-        //*/
         //startNav.setEnabled(true);
         //startNav.setBackgroundResource(R.color.mapbox_blue);
     }

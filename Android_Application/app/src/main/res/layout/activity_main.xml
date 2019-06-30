@@ -12,7 +12,10 @@
         android:layout_height="match_parent"
         mapbox:mapbox_cameraTargetLat="55.944552"
         mapbox:mapbox_cameraTargetLng="-3.186328"
-        mapbox:mapbox_cameraZoom="15" />
+        mapbox:mapbox_cameraZoom="15"
+        tools:layout_editor_absoluteX="-95dp"
+        tools:layout_editor_absoluteY="0dp" />
+
     <Button
         android:id="@+id/startButton"
         android:layout_width="fill_parent"
@@ -23,7 +26,7 @@
         android:layout_marginEnd="16dp"
         android:background="@color/mapboxGrayLight"
         android:enabled="false"
-        android:text="Start navigation"
+        android:text="Use pollution"
         android:textColor="@color/mapboxWhite"
         mapbox:layout_constraintStart_toStartOf="parent"
         mapbox:layout_constraintTop_toTopOf="parent" />
@@ -58,6 +61,28 @@
         mapbox:layout_constraintStart_toStartOf="@id/planRoute"
         mapbox:layout_constraintTop_toTopOf="@id/planRoute" />
 
+    <TextView
+        android:id="@+id/pollution"
+        android:layout_width="241dp"
+        android:layout_height="43dp"
+        android:layout_marginStart="8dp"
+        android:ems="10"
+        android:inputType="numberDecimal"
+        android:textColor="@color/mapbox_navigation_route_layer_congestion_red"
+        mapbox:layout_constraintStart_toStartOf="parent"
+        mapbox:layout_constraintTop_toBottomOf="@+id/showHeatMap" />
+
+    <TextView
+        android:id="@+id/usePollution"
+        android:layout_width="180dp"
+        android:layout_height="46dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/mapbox_navigation_route_layer_congestion_red"
+        mapbox:layout_constraintBottom_toTopOf="@+id/pollution"
+        mapbox:layout_constraintStart_toStartOf="parent"
+        mapbox:layout_constraintTop_toBottomOf="@+id/pollution"
+        mapbox:layout_constraintVertical_bias="0.156" />
 
 
 </android.support.constraint.ConstraintLayout>
