@@ -16,7 +16,7 @@ public class MapController {
 
     /*
     Example URL request:
-    http://localhost:8080/routes/55.940639/-3.182709/55.944941/-3.194339
+    http://localhost:8080/True/routes/55.940639/-3.182709/55.944941/-3.194339
      */
     @RequestMapping("/routes/{usePollution}/{sLat}/{sLong}/{tLat}/{tLong}")
     String getRoutes(@PathVariable("usePollution") Boolean usePollution,
@@ -31,8 +31,10 @@ public class MapController {
         return RoutePlanner.findRoute(usePollution, sLat, sLong, tLat, tLong);
     }
 
+    /*
     @RequestMapping("/heatMap")
     String getHeatMap(){
         return DataIO.toJson(RoutePlanner.getPoints());
     }
+    */
 }

@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<android.support.design.widget.CoordinatorLayout
+
+xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:mapbox="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/myLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
+
+    <!--
+<android.support.constraint.ConstraintLayout
+    android:layout_height="match_parent"
+    android:layout_width="match_parent">
+    -->
 
     <com.mapbox.mapboxsdk.maps.MapView
         android:id="@+id/mapView"
@@ -13,76 +23,58 @@
         mapbox:mapbox_cameraTargetLat="55.944552"
         mapbox:mapbox_cameraTargetLng="-3.186328"
         mapbox:mapbox_cameraZoom="15"
-        tools:layout_editor_absoluteX="-95dp"
-        tools:layout_editor_absoluteY="0dp" />
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="0dp" >
+    </com.mapbox.mapboxsdk.maps.MapView>
 
-    <Button
-        android:id="@+id/startButton"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginLeft="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:background="@color/mapboxGrayLight"
-        android:enabled="false"
-        android:text="Use pollution"
-        android:textColor="@color/mapboxWhite"
-        mapbox:layout_constraintStart_toStartOf="parent"
-        mapbox:layout_constraintTop_toTopOf="parent" />
-
-    <Button
+    <com.dt.sunenhao.pathplanning.snackbar.MovableButton
         android:id="@+id/planRoute"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginLeft="16dp"
-        android:layout_marginTop="60dp"
-        android:layout_marginEnd="16dp"
-        android:background="@color/mapboxGrayLight"
+        android:layout_width="130dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="120dp"
+        android:layout_marginBottom="20dp"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="bottom"
+        android:background="@drawable/rounded_corner_button"
         android:enabled="false"
         android:text="Plan Route"
-        android:textColor="@color/mapboxWhite"
-        mapbox:layout_constraintStart_toStartOf="@id/startButton"
-        mapbox:layout_constraintTop_toTopOf="@id/startButton" />
 
-    <Button
+        android:bottomRightRadius="20dp"
+        android:bottomLeftRadius="20dp"
+        android:topLeftRadius="20dp"
+        android:topRightRadius="20dp"
+        android:textColor="@color/mapboxWhite"
+        />
+
+    <com.dt.sunenhao.pathplanning.snackbar.MoveableImageButton
         android:id="@+id/showHeatMap"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginLeft="16dp"
-        android:layout_marginTop="60dp"
-        android:layout_marginEnd="16dp"
-        android:background="@color/mapboxGrayLight"
-        android:enabled="false"
-        android:text="Show HeatMap"
-        android:textColor="@color/mapboxWhite"
-        mapbox:layout_constraintStart_toStartOf="@id/planRoute"
-        mapbox:layout_constraintTop_toTopOf="@id/planRoute" />
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="bottom|right"
+        android:background="@null"
+        android:src="@drawable/heatmap"
+        />
 
-    <TextView
-        android:id="@+id/pollution"
-        android:layout_width="241dp"
-        android:layout_height="43dp"
-        android:layout_marginStart="8dp"
-        android:ems="10"
-        android:inputType="numberDecimal"
-        android:textColor="@color/mapbox_navigation_route_layer_congestion_red"
-        mapbox:layout_constraintStart_toStartOf="parent"
-        mapbox:layout_constraintTop_toBottomOf="@+id/showHeatMap" />
 
-    <TextView
+    <Switch
         android:id="@+id/usePollution"
-        android:layout_width="180dp"
-        android:layout_height="46dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:textColor="@color/mapbox_navigation_route_layer_congestion_red"
-        mapbox:layout_constraintBottom_toTopOf="@+id/pollution"
-        mapbox:layout_constraintStart_toStartOf="parent"
-        mapbox:layout_constraintTop_toBottomOf="@+id/pollution"
-        mapbox:layout_constraintVertical_bias="0.156" />
+        android:layout_width="45dp"
+        android:layout_height="26dp"
+        android:layout_gravity="left"
+        android:theme="@style/SwitchTheme"
+        />
 
 
-</android.support.constraint.ConstraintLayout>
+    <!--
+    <com.scichart.charting.visuals.SciChartHeatmapColourMap
+        android:id="@+id/heatmapColourMap"
+        android:layout_width="115dp"
+        android:layout_height="578dp"
+        android:layout_marginStart="252dp"
+        mapbox:layout_constraintStart_toStartOf="@+id/mapView"
+        mapbox:layout_constraintTop_toTopOf="@+id/mapView" />
+    -->
+
+</android.support.design.widget.CoordinatorLayout>
+

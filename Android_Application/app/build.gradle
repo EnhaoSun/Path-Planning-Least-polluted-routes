@@ -40,6 +40,14 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.5'
     implementation 'org.slf4j:slf4j-simple:1.7.5'
 
+    implementation (group: 'com.scichart.library', name: 'core', version: '2.0.0.1654', ext: 'aar')
+    implementation (group: 'com.scichart.library', name: 'data', version: '2.0.0.1654', ext: 'aar')
+    implementation (group: 'com.scichart.library', name: 'drawing', version: '2.0.0.1654', ext: 'aar')
+    implementation (group: 'com.scichart.library', name: 'charting', version: '2.0.0.1654', ext: 'aar')
+    implementation (group: 'com.scichart.library', name: 'extensions',version: '2.0.0.1654', ext: 'aar')
+
+    implementation 'com.jakewharton:butterknife:8.8.1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'

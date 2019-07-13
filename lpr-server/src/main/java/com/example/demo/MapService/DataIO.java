@@ -5,16 +5,25 @@ import org.json.JSONArray;
 import org.json.JSONObject; 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Enhao Sun
  * @version 2019-06-11.
  */
 public class DataIO {
+    private static String nodeFile = "node_ed.txt";
+    private static String adjaFile = "adjacency_ed.txt";
+    private static String pollution = "PM_gen.txt";
+    private static String grid = "gridLarge.txt";
+
+    private static double MIN_PM1 = 0.16;
+    private static double MAX_PM1 = 2.0;
+    private static double MIN_PM2 = 1.0;
+    private static double MAX_PM2 = 29.0;
+    private static double MIN_PM10 = 1.0;
+    private static double MAX_PM10 = 5.0;
+    private static Random r = new Random(2019);
 
     public static String toJson(List<Point> array){
         JSONObject featureCollection = new JSONObject();
@@ -40,7 +49,10 @@ public class DataIO {
             geometry.put("type", "Point");
             geometry.put("coordinates", jsonArrayCoord);
 
-            airpollution.put("airpollution", array.get(i).getPM2());
+            //airpollution.put("airpollution", array.get(i).getPM2());
+            airpollution.put("pm1", array.get(i).getPM1());
+            airpollution.put("pm2.5", array.get(i).getPM2());
+            airpollution.put("pm10", array.get(i).getPM10());
 
             newFeature.put("type", "Feature");
             newFeature.put("geometry", geometry);
@@ -61,12 +73,15 @@ public class DataIO {
 
     public static List<Point> readGridWithPollution(){
         ClassLoader classLoader = DataIO.class.getClassLoader();
-        File pollution = new File(classLoader.getResource("PM2.5_prediction.txt").getFile());
-        File grid = new File(classLoader.getResource("grid.txt").getFile());
         List<Point> points = new ArrayList<>();
+
+        InputStream inputStream_pollution = classLoader.getResourceAsStream(pollution);
+        InputStream inputStream_grid = classLoader.getResourceAsStream(grid);
+
         try{
             // Read the grid points
-            BufferedReader br = new BufferedReader(new FileReader(String.valueOf(grid.toPath())));
+            //BufferedReader br = new BufferedReader(new FileReader(String.valueOf(grid.toPath())));
+            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream_grid));
             String line;
             while((line = br.readLine())!=null){
                 String[] geo = line.replaceAll("\\(|\\)|,", "").split("\\s+");
@@ -80,12 +95,12 @@ public class DataIO {
                 points.add(new Point(lat, lon));
             }
             // Read the pollution corresponding to each grid center
-            br = new BufferedReader(new FileReader(String.valueOf(pollution.toPath())));
+            br = new BufferedReader(new InputStreamReader(inputStream_pollution));
             int index = 0;
             while((line = br.readLine())!=null) {
                 String[] pm = line.split("\\s+");
                 for(int i = 0; i < pm.length; i++)
-                    points.get(index*20 + i).setPM2(Double.parseDouble(pm[i]));
+                    points.get(index*160 + i).setPM2(Double.parseDouble(pm[i]));
                 index++;
             }
 
@@ -97,11 +112,13 @@ public class DataIO {
 
     public static List<Point> readPointsWithID(){
         ClassLoader classLoader = DataIO.class.getClassLoader();
-        File file = new File(classLoader.getResource("node.txt").getFile());
+        //File file = new File(classLoader.getResource(nodeFile).getFile());
         List<Point> points = new ArrayList<>();
 
+        InputStream inputStream = classLoader.getResourceAsStream(nodeFile);
         try{
-            BufferedReader br = new BufferedReader(new FileReader(String.valueOf(file.toPath())));
+            //BufferedReader br = new BufferedReader(new FileReader(String.valueOf(file.toPath())));
+            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
             String line;
             int index = 0;
             while ((line = br.readLine()) != null) {
@@ -111,6 +128,9 @@ public class DataIO {
                 double longtitude = Double.parseDouble(nums[2]);
                 Point p = new Point(latitude, longtitude);
                 p.setIndex(index);
+                p.setPM1(MIN_PM1 + (MAX_PM1 - MIN_PM1) * r.nextDouble());
+                //p.setPM2(MIN_PM2 + (MAX_PM2 - MIN_PM2) * r.nextDouble());
+                p.setPM10(MIN_PM10 + (MAX_PM10 - MIN_PM10) * r.nextDouble());
                 points.add(p);
                 index++;
             }
@@ -124,24 +144,24 @@ public class DataIO {
     public static Map<Integer, List<Integer>> readAdjacencyList(){
         Map<Integer, List<Integer>> neighbors = new HashMap<>();
         ClassLoader classLoader = DataIO.class.getClassLoader();
-        File file = new File(classLoader.getResource("adjacency.txt").getFile());
+        //File file = new File(classLoader.getResource(adjaFile).getFile());
+        InputStream inputStream = classLoader.getResourceAsStream(adjaFile);
         try {
-            BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
+            //BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
+            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
             String line;
-            int i = 0;
+            int index = 0;
 
             while((line = br.readLine()) != null) {
-                neighbors.put(i, new ArrayList<Integer>());
                 String[] divided = line.split(":");
+                index = Integer.parseInt(divided[0]);
+                neighbors.put(index, new ArrayList<Integer>());
                 divided[1] = divided[1].substring(1);
                 String[] nums = divided[1].split("\\s+");
                 for(String num : nums) {
-                    if (num.matches("[0-9]+")) {
-                        int p = Integer.parseInt(num);
-                        neighbors.get(i).add(p);
-                    }
+                    int p = Integer.parseInt(num);
+                    neighbors.get(index).add(p);
                 }
-                i++;
             }
         }catch (IOException e) {
             e.printStackTrace();

@@ -15,9 +15,10 @@ public final class RoutePlanner {
     private static List<Point> connectedPoints;
     private static ArrayList<Point> routePoints;
     private static List<Point> gridPoints;
+    public final static int MAX_NODES = 1000001;
 
     public static void initialiseGrouph(boolean pollutionGrid){
-        System.out.println("Initializing Grouph");
+        System.out.println("Initializing Graph");
         points = DataIO.readPointsWithID();
         neighbors = DataIO.readAdjacencyList();
 
@@ -26,9 +27,6 @@ public final class RoutePlanner {
             CoverTree gridCoverTree = new CoverTree(gridPoints.toArray(new Point[gridPoints.size()]), new PointMetric());
             points = DataIO.getPollutioFromNeighbor(points, gridCoverTree, gridPoints);
         }
-
-        //for(int i = 0; i < neighbors.size(); i++)
-        //    System.out.println(neighbors.get(i));
 
         connectedPoints = new ArrayList<>();
         for(Point p : points){
@@ -40,18 +38,22 @@ public final class RoutePlanner {
         }
         Point[] connectedPointArray = connectedPoints.toArray(new Point[connectedPoints.size()]);
         coverTree = new CoverTree(connectedPointArray, new PointMetric());
+        System.out.println("Finished initializing Graph");
     }
 
     public static String findRoute(boolean usePollution, double lat1, double lng1, double lat2, double lng2){
         int s = connectedPoints.get(coverTree.nearest(new Point(lat1, lng1)).index).getIndex();
         int t = connectedPoints.get(coverTree.nearest(new Point(lat2, lng2)).index).getIndex();
 
-        //return dijkstraByPollution(usePollution, s, t);
-        return aStar(usePollution, s,t);
+        System.out.println("Source: " + s);
+        System.out.println("Target: " + t);
+        return dijkstraByPollution(usePollution, s, t);
+        //return aStar(usePollution, s,t);
         //return bidirectionalAStar(s, t);
     }
 
     public static String bidirectionalAStar(int source, int target){
+        int heuristic = 3;
         //System.out.println("Birectional A Star");
         PriorityQueue<Point> queue_forward = new PriorityQueue<>(11, Comparator.comparingDouble(Point::getWeight));
         PriorityQueue<Point> queue_backward = new PriorityQueue<>(11, Comparator.comparingDouble(Point::getWeight));
@@ -60,14 +62,14 @@ public final class RoutePlanner {
         queue_forward.add(s);
         queue_backward.add(t);
 
-        double[] pol_forward = new double[100001];
-        double[] pol_backward = new double[100001];
-        double[] dist_forward = new double[100001];
-        double[] dist_backward = new double[100001];
-        int[] parent_forward = new int[100001];
-        int[] parent_backward = new int[100001];
-        boolean[] settled_forward = new boolean[100001];
-        boolean[] settled_backward = new boolean[100001];
+        double[] pol_forward = new double[MAX_NODES];
+        double[] pol_backward = new double[MAX_NODES];
+        double[] dist_forward = new double[MAX_NODES];
+        double[] dist_backward = new double[MAX_NODES];
+        int[] parent_forward = new int[MAX_NODES];
+        int[] parent_backward = new int[MAX_NODES];
+        boolean[] settled_forward = new boolean[MAX_NODES];
+        boolean[] settled_backward = new boolean[MAX_NODES];
 
         Arrays.fill(pol_forward, 3000000000.0);
         Arrays.fill(pol_backward, 3000000000.0);
@@ -109,7 +111,7 @@ public final class RoutePlanner {
                         if (pol_forward[i] > pol_forward[curNode] + d) {
                             pol_forward[i] = pol_forward[curNode] + d;
                             dist_forward[i] = dist_forward[curNode] + neighbor.getHarvesineDistance(p);
-                            neighbor.setWeight(pol_forward[i] + neighbor.getHarvesineDistance(t));
+                            neighbor.setWeight(pol_forward[i] + heuristic * neighbor.getHarvesineDistance(t));
                             parent_forward[i] = curNode;
                             queue_forward.add(neighbor);
                         }
@@ -137,7 +139,7 @@ public final class RoutePlanner {
                         if (pol_backward[i] > pol_backward[curNode] + d) {
                             pol_backward[i] = pol_backward[curNode] + d;
                             dist_backward[i] = dist_backward[curNode] + neighbor.getHarvesineDistance(p);
-                            neighbor.setWeight(pol_backward[i] + neighbor.getHarvesineDistance(s));
+                            neighbor.setWeight(pol_backward[i] + heuristic * neighbor.getHarvesineDistance(s));
                             parent_backward[i] = curNode;
                             queue_backward.add(neighbor);
                         }
@@ -185,22 +187,22 @@ public final class RoutePlanner {
     }
 
     public static String aStar(boolean usePollution, int source, int target){
-        //System.out.println("A Star By pollution");
+        System.out.println("A Star By pollution");
+        int heuristic = 4;
         PriorityQueue<Point> queue = new PriorityQueue<>(11, Comparator.comparingDouble(Point::getWeight));
         Point s = points.get(source);
         Point t = points.get(target);
         queue.add(s);
 
-        //System.out.println("Source: " + source);
-        //System.out.println("Target: " + target);
+        double[] dist = new double[MAX_NODES];
+        double[] pol = new double[MAX_NODES];
+        int[] parent = new int[MAX_NODES];
+        boolean[] settled = new boolean[MAX_NODES];
 
-        double[] dist = new double[100001];
-        double[] pol = new double[100001];
-        int[] parent = new int[100001];
-        boolean[] settled = new boolean[100001];
-
-        Arrays.fill(pol, 3000000000.0);
-        Arrays.fill(dist, 3000000000.0);
+        if(usePollution)
+            Arrays.fill(pol, 3000000000.0);
+        else
+            Arrays.fill(dist, 3000000000.0);
 
         dist[s.getIndex()] = 0;
         pol[s.getIndex()] = s.getPM2();
@@ -220,7 +222,7 @@ public final class RoutePlanner {
                         if(pol[i] > pol[curNode] + neighbor.getPM2()){
                             pol[i] = pol[curNode] + neighbor.getPM2();
                             dist[i] = dist[curNode] + neighbor.getHarvesineDistance(p);
-                            neighbor.setWeight(pol[i] + neighbor.getHarvesineDistance(t));
+                            neighbor.setWeight(pol[i] + heuristic * neighbor.getHarvesineDistance(t));
                             parent[i] = curNode;
                             queue.add(neighbor);
                         }
@@ -240,13 +242,14 @@ public final class RoutePlanner {
         routePoints = new ArrayList<>();
         double totalPM2 = 0;
         String routeString = RoutePlanner.saveRouteNodes(points, target, parent);
-        for(Point p : routePoints){
-            totalPM2 += p.getPM2();
-        }
+        //for(Point p : routePoints){
+        //    totalPM2 += p.getPM2();
+        //}
         //System.out.println("Execution time A*: " + (endTime - startTime));
-        //System.out.println("Total points: " + routePoints.size());
-        System.out.println("Use Pollution: " + usePollution + "Total PM2.5: " + totalPM2);
-        return totalPM2 + "\n" + routeString;
+        System.out.println("Total points: " + routePoints.size());
+        //System.out.println("Use Pollution: " + usePollution + "Total PM2.5: " + totalPM2);
+        //return totalPM2 + "\n" + routeString;
+        return DataIO.toJson(routePoints);
     }
 
 
@@ -259,10 +262,10 @@ public final class RoutePlanner {
         System.out.println("Source: " + source);
         System.out.println("Target: " + target);
 
-        double[] dist = new double[100001];
-        double[] pol = new double[100001];
-        int[] parent = new int[100001];
-        boolean[] settled = new boolean[100001];
+        double[] dist = new double[MAX_NODES];
+        double[] pol = new double[MAX_NODES];
+        int[] parent = new int[MAX_NODES];
+        boolean[] settled = new boolean[MAX_NODES];
 
         Arrays.fill(pol, 3000000000.0);
         Arrays.fill(dist, 3000000000.0);
@@ -313,7 +316,8 @@ public final class RoutePlanner {
         //System.out.println("Total poitns: " + routePoints.size());
         //System.out.println("Total PM2.5: " + totalPM2);
         System.out.println("Use Pollution: " + usePollution + "Total PM2.5: " + totalPM2);
-        return routeString;
+        //return routeString;
+        return DataIO.toJson(routePoints);
     }
 
 
@@ -322,10 +326,10 @@ public final class RoutePlanner {
         Point s = points.get(source);
         queue.add(s);
 
-        double[] dist = new double[100001];
-        //double[] pol = new double[100001];
-        int[] parent = new int[100001];
-        boolean[] settled = new boolean[100001];
+        double[] dist = new double[MAX_NODES];
+        //double[] pol = new double[MAX_NODES];
+        int[] parent = new int[MAX_NODES];
+        boolean[] settled = new boolean[MAX_NODES];
 
         Arrays.fill(dist, 3000000000.0);
 
@@ -389,9 +393,6 @@ public final class RoutePlanner {
         }
         return str;
     }
-
-
-
 
     public static List<Point> getConnectedPoints() {
         return connectedPoints;
