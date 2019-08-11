@@ -305,7 +305,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      * Search Bar
      */
     private void setupAutoCompleteFragment(){
-        String apiKey = "AIzaSyDus83q0BII0jLEpRMp5UN2lp-oOISe6oY";
+        String apiKey = "API Key for Google Map service";
         if (!Places.isInitialized()){
             Places.initialize(getApplicationContext(), apiKey);
         }
