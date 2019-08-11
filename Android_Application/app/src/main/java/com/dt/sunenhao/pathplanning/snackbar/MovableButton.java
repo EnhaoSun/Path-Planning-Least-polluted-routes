@@ -1,11 +1,14 @@
 package com.dt.sunenhao.pathplanning.snackbar;
 
 import android.content.Context;
-import android.support.design.widget.CoordinatorLayout;
 import android.util.AttributeSet;
+import android.widget.Button;
+
+import androidx.appcompat.widget.AppCompatImageButton;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 @CoordinatorLayout.DefaultBehavior(MoveUpwardBehavior.class)
-public class MovableButton extends android.support.v7.widget.AppCompatButton {
+public class MovableButton extends AppCompatImageButton {
 
     public MovableButton(Context context) {
         super(context);

@@ -6,49 +6,60 @@ import java.util.ArrayList;
 
 public class Route {
     private ArrayList<Point> route;
-    private double aver_PM1;
-    private double aver_PM2;
-    private double aver_PM10;
+    private double totalPM1;
+    private double totalPM2;
+    private double totalPM10;
+    private double totalDistance;
     private String routeJson;
+    private String polTime;
 
-
-    public Route(ArrayList<Point> route, String routeJson, double aver_PM1, double aver_PM2, double aver_PM10) {
+    public Route(ArrayList<Point> route, double totalPM1, double totalPM2, double totalPM10, double totalDistance, String routeJson) {
         this.route = route;
-        this.aver_PM1 = aver_PM1;
-        this.aver_PM2 = aver_PM2;
-        this.aver_PM10 = aver_PM10;
+        this.totalPM1 = totalPM1;
+        this.totalPM2 = totalPM2;
+        this.totalPM10 = totalPM10;
+        this.totalDistance = totalDistance;
         this.routeJson = routeJson;
     }
 
     public ArrayList<Point> getRoute() {
         return route;
     }
+
     public void setRoute(ArrayList<Point> route) {
         this.route = route;
     }
 
-    public double getAver_PM1() {
-        return aver_PM1;
+    public double getTotalPM1() {
+        return totalPM1;
     }
 
-    public void setAver_PM1(double aver_PM1) {
-        this.aver_PM1 = aver_PM1;
+    public void setTotalPM1(double totalPM1) {
+        this.totalPM1 = totalPM1;
     }
 
-    public double getAver_PM2() {
-        return aver_PM2;
+    public double getTotalPM2() {
+        return totalPM2;
     }
 
-    public void setAver_PM2(double aver_PM2) {
-        this.aver_PM2 = aver_PM2;
+    public void setTotalPM2(double totalPM2) {
+        this.totalPM2 = totalPM2;
     }
 
-    public double getAver_PM10() {
-        return aver_PM10;
+    public double getTotalPM10() {
+        return totalPM10;
     }
 
-    public void setAver_PM10(double aver_PM10) {
-        this.aver_PM10 = aver_PM10;
+    public void setTotalPM10(double totalPM10) {
+        this.totalPM10 = totalPM10;
+    }
+
+    public double getTotalDistance() {
+        return totalDistance;
+    }
+
+    public void setTotalDistance(double totalDistance) {
+        this.totalDistance = totalDistance;
     }
 
     public String getRouteJson() {
@@ -57,5 +68,13 @@ public class Route {
 
     public void setRouteJson(String routeJson) {
         this.routeJson = routeJson;
+    }
+
+    public String getPolTime() {
+        return polTime;
+    }
+
+    public void setPolTime(String polTime) {
+        this.polTime = polTime;
     }
 }

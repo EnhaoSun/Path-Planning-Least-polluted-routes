@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<android.support.design.widget.CoordinatorLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
 
 xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:mapbox="http://schemas.android.com/apk/res-auto"
@@ -25,56 +25,187 @@ xmlns:android="http://schemas.android.com/apk/res/android"
         mapbox:mapbox_cameraZoom="15"
         tools:layout_editor_absoluteX="0dp"
         tools:layout_editor_absoluteY="0dp" >
+
     </com.mapbox.mapboxsdk.maps.MapView>
 
-    <com.dt.sunenhao.pathplanning.snackbar.MovableButton
-        android:id="@+id/planRoute"
-        android:layout_width="130dp"
+
+     <TableLayout
+            android:id="@+id/tableLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:stretchColumns="*"
+            android:background="@drawable/table_border"
+            android:layout_gravity="bottom">
+
+            <TableRow
+                android:id="@+id/rowTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Route"
+                    android:textStyle="bold"
+                    android:layout_weight = "1"
+                    android:gravity="center"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PM1"
+                    android:textStyle="bold"
+                    android:layout_weight = "1"
+                    android:gravity="center"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PM2.5"
+                    android:textStyle="bold"
+                    android:layout_weight = "1"
+                    android:gravity="center"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PM10"
+                    android:textStyle="bold"
+                    android:layout_weight = "1"
+                    android:gravity="center"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Distance(mile)"
+                    android:textStyle="bold"
+                    android:layout_weight = "1"
+                    android:gravity="center"/>
+            </TableRow>
+        </TableLayout>
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:layout_marginStart="120dp"
-        android:layout_marginBottom="20dp"
-        android:layout_alignParentBottom="true"
-        android:layout_gravity="bottom"
-        android:background="@drawable/rounded_corner_button"
-        android:enabled="false"
-        android:text="Plan Route"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp"
+        android:id="@+id/linearlayout1"
+        android:background="@drawable/white_border">
 
-        android:bottomRightRadius="20dp"
-        android:bottomLeftRadius="20dp"
-        android:topLeftRadius="20dp"
-        android:topRightRadius="20dp"
-        android:textColor="@color/mapboxWhite"
-        />
+        <fragment android:id="@+id/autocomplete_fragment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/white_border"
+            android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+            />
 
-    <com.dt.sunenhao.pathplanning.snackbar.MoveableImageButton
-        android:id="@+id/showHeatMap"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
+    </LinearLayout>
+
+    </RelativeLayout>
+
+
+
+
+    <ImageView
+        android:id="@+id/planRoute"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginBottom="150dp"
+        android:layout_marginRight="10dp"
         android:layout_alignParentBottom="true"
         android:layout_gravity="bottom|right"
-        android:background="@null"
-        android:src="@drawable/heatmap"
+        android:background="@drawable/ic_nav"
+        android:enabled="true"
         />
 
+    <ImageView
+        android:id="@+id/showHeatMap"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="100dp"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="bottom|right"
+        android:src="@drawable/ic_heatmap"
+        />
 
-    <Switch
+    <ImageView
+        android:id="@+id/ic_gps"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="200dp"
+        android:layout_gravity="bottom|right"
+        android:scaleType="centerCrop"
+        android:layout_alignParentBottom="true"
+        android:src="@drawable/ic_gps"/>
+
+    <ImageView
+        android:id="@+id/ic_clear"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="250dp"
+        android:layout_gravity="bottom|right"
+        android:scaleType="centerCrop"
+        android:layout_alignParentBottom="true"
+        android:src="@drawable/ic_clear"/>
+
+    <ImageView
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginBottom="100dp"
+        android:layout_alignParentBottom="true"
+        android:id="@+id/showRouteInfo"
+        android:layout_gravity="bottom|left"
+        android:text="RouteInfo"
+        android:src="@drawable/ic_info"/>
+
+    <Button
         android:id="@+id/usePollution"
-        android:layout_width="45dp"
-        android:layout_height="26dp"
-        android:layout_gravity="left"
-        android:theme="@style/SwitchTheme"
-        />
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginBottom="250dp"
+        android:layout_gravity="bottom|left"
+        android:text="POL"
+        android:textColor="#fff"
+        android:background="@drawable/round_button"
+    />
 
 
-    <!--
-    <com.scichart.charting.visuals.SciChartHeatmapColourMap
-        android:id="@+id/heatmapColourMap"
-        android:layout_width="115dp"
-        android:layout_height="578dp"
-        android:layout_marginStart="252dp"
-        mapbox:layout_constraintStart_toStartOf="@+id/mapView"
-        mapbox:layout_constraintTop_toTopOf="@+id/mapView" />
-    -->
 
-</android.support.design.widget.CoordinatorLayout>
+    <Button
+        android:id="@+id/ALT_route"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginBottom="150dp"
+        android:layout_gravity="bottom|left"
+        android:text="ALT"
+        android:textColor="#fff"
+        android:background="@drawable/round_button"
+      />
+
+
+
+    <Button
+        android:id="@+id/updatePOL"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginBottom="200dp"
+        android:layout_gravity="bottom|left"
+        android:text="UPP"
+        android:textColor="#fff"
+        android:background="@drawable/round_button"
+      />
+
+
+
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
 

@@ -1,9 +1,11 @@
 package com.dt.sunenhao.pathplanning.snackbar;
 
 import android.os.Build;
-import android.support.design.widget.CoordinatorLayout;
 import android.view.View;
-import android.support.design.widget.Snackbar;
+
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+
+import com.google.android.material.snackbar.Snackbar;
 
 public class MoveUpwardBehavior extends CoordinatorLayout.Behavior<View> {
     private static final boolean

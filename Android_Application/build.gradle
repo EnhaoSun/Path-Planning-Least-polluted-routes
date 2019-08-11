@@ -21,6 +21,7 @@ allprojects {
         mavenCentral()
         maven { url 'https://mapbox.bintray.com/mapbox' }
         maven { url 'https://www.myget.org/F/abtsoftware/maven' }
+        maven { url "https://maven.google.com"}
     }
 }
 

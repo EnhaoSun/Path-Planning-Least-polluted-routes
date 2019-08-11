@@ -16,6 +16,7 @@ public class DataIO {
     private static String adjaFile = "adjacency_ed.txt";
     private static String pollution = "PM_gen.txt";
     private static String grid = "gridLarge.txt";
+    private static String currentPMFile = "PM_gen.txt";
 
     private static double MIN_PM1 = 0.16;
     private static double MAX_PM1 = 2.0;
@@ -25,11 +26,12 @@ public class DataIO {
     private static double MAX_PM10 = 5.0;
     private static Random r = new Random(2019);
 
-    public static String toJson(List<Point> array){
+    public static String toJson(List<Point> array, double distance){
         JSONObject featureCollection = new JSONObject();
         featureCollection.put("type", "FeatureCollection");
         JSONObject properties = new JSONObject();
         properties.put("name", "Airpollution-Geo");
+        properties.put("distance", distance);
         JSONObject crs = new JSONObject();
         crs.put("type", "name");
         crs.put("properties", properties);
@@ -64,9 +66,43 @@ public class DataIO {
         return featureCollection.toString();
     }
 
-    public static List<Point> getPollutioFromNeighbor(List<Point> points, CoverTree coverTree, List<Point> gridPoints){
-        for(Point p : points){
-            p.setPM2(gridPoints.get(coverTree.nearest(p).index).getPM2());
+    public static List<Point> updatePollution(List<Point> points, boolean test) {
+        ClassLoader classLoader = DataIO.class.getClassLoader();
+        if(currentPMFile.equalsIgnoreCase("PM_gen.txt")){
+            currentPMFile = "PM_gen_1.txt";
+        }else{
+            currentPMFile = "PM_gen.txt";
+        }
+
+        InputStream inputStream_pollution = classLoader.getResourceAsStream(currentPMFile);
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream_pollution));
+            int index = 0;
+            String line = br.readLine();
+            if (line.equalsIgnoreCase(RoutePlanner.getLastestData_Time())) {
+                System.out.println("Grid pollution is up to date");
+                return null;
+            }
+            System.out.println("Updating the grid pollution");
+            while ((line = br.readLine()) != null) {
+                String[] pm = line.split("\\s+");
+                for (int i = 0; i < pm.length; i++) {
+                    points.get(index * 160 + i).setPM2(Double.parseDouble(pm[i]));
+                }
+                index++;
+            }
+            return points;
+        } catch (IOException e) {
+            System.out.println(e.toString());
+        }
+        return points;
+    }
+
+    public static List<Point> getPollutioFromNeighbor(List<Point> connectedPoints, CoverTree coverTree, List<Point> gridPoints){
+        List<Point> points = RoutePlanner.getPoints();
+        for(Point p : connectedPoints){
+            double pm = gridPoints.get(coverTree.nearest(p).index).getPM2();
+            points.get(p.getIndex()).setPM2(pm);
         }
         return points;
     }
@@ -97,6 +133,7 @@ public class DataIO {
             // Read the pollution corresponding to each grid center
             br = new BufferedReader(new InputStreamReader(inputStream_pollution));
             int index = 0;
+            line = br.readLine();
             while((line = br.readLine())!=null) {
                 String[] pm = line.split("\\s+");
                 for(int i = 0; i < pm.length; i++)

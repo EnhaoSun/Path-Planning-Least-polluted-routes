@@ -18,8 +18,10 @@ public class MapController {
     Example URL request:
     http://localhost:8080/True/routes/55.940639/-3.182709/55.944941/-3.194339
      */
-    @RequestMapping("/routes/{usePollution}/{sLat}/{sLong}/{tLat}/{tLong}")
-    String getRoutes(@PathVariable("usePollution") Boolean usePollution,
+    @RequestMapping("/routes/{alternative}/{updatePM}/{usePollution}/{sLat}/{sLong}/{tLat}/{tLong}")
+    String getRoutes(@PathVariable("alternative") Boolean alternative,
+                     @PathVariable("updatePM") Boolean updatePM,
+                     @PathVariable("usePollution") Boolean usePollution,
                      @PathVariable("sLat") Double sLat, @PathVariable("sLong") Double sLong,
                      @PathVariable("tLat") Double tLat, @PathVariable("tLong") Double tLong){
         /*
@@ -28,13 +30,15 @@ public class MapController {
         double tLat = 55.944941;
         double tLong = -3.194339;
         */
-        return RoutePlanner.findRoute(usePollution, sLat, sLong, tLat, tLong);
+        return RoutePlanner.findRoute(false, alternative, updatePM, usePollution, sLat, sLong, tLat, tLong);
     }
 
-    /*
-    @RequestMapping("/heatMap")
-    String getHeatMap(){
-        return DataIO.toJson(RoutePlanner.getPoints());
+    @RequestMapping("/test/{updatePM}/{usePollution}/{sLat}/{sLong}/{tLat}/{tLong}")
+    String testWithLiveData(@PathVariable("updatePM") Boolean updatePM,
+                     @PathVariable("usePollution") Boolean usePollution,
+                     @PathVariable("sLat") Double sLat, @PathVariable("sLong") Double sLong,
+                     @PathVariable("tLat") Double tLat, @PathVariable("tLong") Double tLong){
+
+        return RoutePlanner.findRoute(true, false, updatePM, usePollution, sLat, sLong, tLat, tLong);
     }
-    */
 }

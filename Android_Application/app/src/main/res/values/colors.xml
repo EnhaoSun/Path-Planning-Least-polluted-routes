@@ -10,5 +10,6 @@
     <color name="mapboxYellow">#d9d838</color>
     <color name="mapboxRed">#b43b71</color>
     <color name="orange">#f7702d</color>
+    <color name="gray">#9fa19d</color>
 
 </resources>

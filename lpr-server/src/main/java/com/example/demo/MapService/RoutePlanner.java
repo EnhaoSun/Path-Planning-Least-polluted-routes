@@ -16,6 +16,7 @@ public final class RoutePlanner {
     private static ArrayList<Point> routePoints;
     private static List<Point> gridPoints;
     public final static int MAX_NODES = 1000001;
+    private static String lastestData_Time = null;
 
     public static void initialiseGrouph(boolean pollutionGrid){
         System.out.println("Initializing Graph");
@@ -41,19 +42,41 @@ public final class RoutePlanner {
         System.out.println("Finished initializing Graph");
     }
 
-    public static String findRoute(boolean usePollution, double lat1, double lng1, double lat2, double lng2){
+    public static void updatePollution(boolean test){
+        long startTime = System.currentTimeMillis();
+        List<Point> updatedPoints = DataIO.updatePollution(gridPoints, test);
+        if(updatedPoints == null) {
+            long endTime = System.currentTimeMillis();
+            System.out.println("Total Time for updating pollution: " + (endTime - startTime));
+            return;
+        }
+        else
+            gridPoints = updatedPoints;
+        CoverTree gridCoverTree = new CoverTree(gridPoints.toArray(new Point[gridPoints.size()]), new PointMetric());
+        //points = DataIO.getPollutioFromNeighbor(points, gridCoverTree, gridPoints);
+        points = DataIO.getPollutioFromNeighbor(connectedPoints, gridCoverTree, gridPoints);
+        long endTime = System.currentTimeMillis();
+        System.out.println("Total Time for updating pollution: " + (endTime - startTime));
+    }
+
+    public static String findRoute(boolean test, boolean alternative, boolean updatePM, boolean usePollution, double lat1, double lng1, double lat2, double lng2){
         int s = connectedPoints.get(coverTree.nearest(new Point(lat1, lng1)).index).getIndex();
         int t = connectedPoints.get(coverTree.nearest(new Point(lat2, lng2)).index).getIndex();
 
+        if(updatePM)
+            updatePollution(test);
+
         System.out.println("Source: " + s);
         System.out.println("Target: " + t);
-        return dijkstraByPollution(usePollution, s, t);
-        //return aStar(usePollution, s,t);
-        //return bidirectionalAStar(s, t);
+        String routeString = "";
+        routeString += dijkstraByPollution(usePollution, s, t);
+        if(alternative)
+            routeString += "\n" + aStar(usePollution, s, t);
+        return routeString;
     }
 
     public static String bidirectionalAStar(int source, int target){
-        int heuristic = 3;
+        int heuristic = 2;
         //System.out.println("Birectional A Star");
         PriorityQueue<Point> queue_forward = new PriorityQueue<>(11, Comparator.comparingDouble(Point::getWeight));
         PriorityQueue<Point> queue_backward = new PriorityQueue<>(11, Comparator.comparingDouble(Point::getWeight));
@@ -188,7 +211,8 @@ public final class RoutePlanner {
 
     public static String aStar(boolean usePollution, int source, int target){
         System.out.println("A Star By pollution");
-        int heuristic = 4;
+        int epilson = 20;
+        int heuristic = 2;
         PriorityQueue<Point> queue = new PriorityQueue<>(11, Comparator.comparingDouble(Point::getWeight));
         Point s = points.get(source);
         Point t = points.get(target);
@@ -222,7 +246,7 @@ public final class RoutePlanner {
                         if(pol[i] > pol[curNode] + neighbor.getPM2()){
                             pol[i] = pol[curNode] + neighbor.getPM2();
                             dist[i] = dist[curNode] + neighbor.getHarvesineDistance(p);
-                            neighbor.setWeight(pol[i] + heuristic * neighbor.getHarvesineDistance(t));
+                            neighbor.setWeight(pol[i] + epilson * heuristic * neighbor.getHarvesineDistance(t));
                             parent[i] = curNode;
                             queue.add(neighbor);
                         }
@@ -240,27 +264,26 @@ public final class RoutePlanner {
         }
 
         routePoints = new ArrayList<>();
+        RoutePlanner.saveRouteNodes(points, target, parent);
+        /*
         double totalPM2 = 0;
-        String routeString = RoutePlanner.saveRouteNodes(points, target, parent);
-        //for(Point p : routePoints){
-        //    totalPM2 += p.getPM2();
-        //}
-        //System.out.println("Execution time A*: " + (endTime - startTime));
+        for(Point p : routePoints){
+            totalPM2 += p.getPM2();
+        }
+        System.out.println("Execution time A*: " + (endTime - startTime));
         System.out.println("Total points: " + routePoints.size());
-        //System.out.println("Use Pollution: " + usePollution + "Total PM2.5: " + totalPM2);
-        //return totalPM2 + "\n" + routeString;
-        return DataIO.toJson(routePoints);
+        System.out.println("Total distance: " + dist[target]);
+        System.out.println("Use Pollution: " + usePollution + "Total PM2.5: " + totalPM2);
+        */
+        return DataIO.toJson(routePoints, dist[target]);
     }
 
 
     public static String dijkstraByPollution(boolean usePollution, int source, int target){
-        //System.out.println("Dijkstra By pollution");
+        System.out.println("Dijkstra By pollution");
         PriorityQueue<Point> queue = new PriorityQueue<>(11, Comparator.comparingDouble(Point::getWeight));
         Point s = points.get(source);
         queue.add(s);
-
-        System.out.println("Source: " + source);
-        System.out.println("Target: " + target);
 
         double[] dist = new double[MAX_NODES];
         double[] pol = new double[MAX_NODES];
@@ -306,18 +329,19 @@ public final class RoutePlanner {
         }
 
         routePoints = new ArrayList<>();
-        double totalPM2 = 0;
-        String routeString = RoutePlanner.saveRouteNodes(points, target, parent);
+        RoutePlanner.saveRouteNodes(points, target, parent);
+        /*
         long endTime = System.currentTimeMillis();
+        double totalPM2 = 0;
         for(Point p : routePoints){
             totalPM2 += p.getPM2();
         }
-        //System.out.println("Execution time Dijkstra: " + (endTime - startTime));
-        //System.out.println("Total poitns: " + routePoints.size());
-        //System.out.println("Total PM2.5: " + totalPM2);
+        System.out.println("Execution time Dijkstra: " + (endTime - startTime));
+        System.out.println("Total poitns: " + routePoints.size());
+        System.out.println("Total distance: " + dist[target]);
         System.out.println("Use Pollution: " + usePollution + "Total PM2.5: " + totalPM2);
-        //return routeString;
-        return DataIO.toJson(routePoints);
+        */
+        return DataIO.toJson(routePoints, dist[target]);
     }
 
 
@@ -409,4 +433,14 @@ public final class RoutePlanner {
     public static CoverTree getCoverTree() {
         return coverTree;
     }
+
+    public static String getLastestData_Time() {
+        return lastestData_Time;
+    }
+
+    public static void setLastestData_Time(String lastestData_Time) {
+        RoutePlanner.lastestData_Time = lastestData_Time;
+    }
+
+
 }
