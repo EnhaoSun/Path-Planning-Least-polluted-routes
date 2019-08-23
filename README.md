@@ -10,7 +10,11 @@
 
 The server file are in "lpr-server" folder
 
-In terminal, cd into the folder "lpr-server", then run following code to deploy the server in google cloud: mvn clean package appengine:deploy. Make sure that you have configured your own google cloud app engine envionment. See tutorials in here: https://cloud.google.com/appengine/docs/java/
+In terminal, cd into the folder "lpr-server", then run following code to deploy the server in google cloud:
+```linux
+mvn clean package appengine:deploy. 
+```
+Make sure that you have configured your own google cloud app engine envionment. See tutorials in here: https://cloud.google.com/appengine/docs/java/
 
 ## DATA
 
