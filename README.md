@@ -5,6 +5,21 @@ This is my MSc Dissertation: Least polluted routes
 * In folder "Android_Application"
 * Use Android studio to run and install the application in mobile phones
 
+## Google Map service and Mapbox access code
+The map service of this Android application require Mapbox access tokens (displaying the map) as well as Google Maps services (searching locations). 
+
+To get your Mapbox access tokens, follow the tutorial as below:
+
+https://docs.mapbox.com/help/how-mapbox-works/access-tokens/#how-access-tokens-work
+
+The mapbox access token key should be placed at "**res/values/string.xml**" file for string name "**access_token**".
+
+To optain an API Key for your Android application, please follow the tutorial as below:
+
+https://developers.google.com/maps/documentation/android-sdk/get-api-key
+
+The google API Key is assigned for a String variable called "**apiKey**" in function "**private void setupAutoCompleteFragment**" in "**MainActivity**"
+
 ## Least polluted route server 
 The least polluted route server (lpr-server) is responsible for running path planning algorithms as well as sending the path in JSON to android application.
 
