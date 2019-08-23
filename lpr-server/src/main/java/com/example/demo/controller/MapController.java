@@ -41,4 +41,16 @@ public class MapController {
 
         return RoutePlanner.findRoute(true, false, updatePM, usePollution, sLat, sLong, tLat, tLong);
     }
+
+    @RequestMapping("updatePol/{polServer}")
+    Boolean updatePollution(@PathVariable("polServer") String polserver){
+        if (polserver != null){
+            //get data by requesting polServer 
+            //URL request here
+            return true;
+        }else{
+            //pol server is not valid
+            return false;
+        }
+    }
 }

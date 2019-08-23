@@ -1,25 +1,22 @@
 # Path-Planning-Least-polluted-routes
 
-This is my MSc Dissertation: Least polluted routes.
+## Android application
 
-## AIM
-This project aims to develop a mobile application which can help people find cleanest routes between places.
+* In folder "Android_Application"
 
-## Client-Server
-I developed an Android application which is client and deployed the server in cloud.
+* Use Android studio to run and install the application in mobile phones
 
-As a client, the application needs to send the request to the server every time when it wants to plan routes.
+## Least polluted route server 
 
-On server side, I use Spring Boot to deploy Restful API to deal with requests from client.
+The server file are in "lpr-server" folder
 
+In terminal, cd into the folder "lpr-server", then run following code to deploy the server in google cloud: mvn clean package appengine:deploy. Make sure that you have configured your own google cloud app engine envionment. See tutorials in here: https://cloud.google.com/appengine/docs/java/
 
-## Algorithms
+## DATA
 
-### Dijkstra
+* Map data: in folder "Data/MAPS", "ExtractNodes.ipynb" can extract nodes and adjacency lists from .osm file.
+* GAN: GANs.ipynb can generate 160 x 160 grid of pollution data from 20 x 20 grid of pollution data. 20 x 20 grid of pollution data were in folder "kernel_size_(1,2,3)/valid date/PM2.5-prediction.csv"
 
-### A*
+## Experiment result
 
-### Bidirectional Dijkstra
-
-
-### Bidirectional A*
+The experiment results are in folder "ExperimentsResult"
