@@ -18,7 +18,7 @@ To optain an API Key for your Android application, please follow the tutorial as
 
 https://developers.google.com/maps/documentation/android-sdk/get-api-key
 
-The google API Key is assigned for a String variable called "**apiKey**" in function "**private void setupAutoCompleteFragment**" in "**MainActivity**"
+The google API Key is assigned for a String variable called "**apiKey**" in function "**setupAutoCompleteFragment**" in "**MainActivity**"
 
 ## Least polluted route server 
 The least polluted route server (lpr-server) is responsible for running path planning algorithms as well as sending the path in JSON to android application.
