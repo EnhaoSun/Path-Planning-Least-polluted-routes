@@ -5,7 +5,7 @@ This is my MSc Dissertation: Least polluted routes
 * In folder "Android_Application"
 * Use Android studio to run and install the application in mobile phones
 
-## Google Map service and Mapbox access code
+## Google Maps service and Mapbox access tokens
 The map service of this Android application require Mapbox access tokens (displaying the map) as well as Google Maps services (searching locations). 
 
 To get your Mapbox access tokens, follow the tutorial as below:
